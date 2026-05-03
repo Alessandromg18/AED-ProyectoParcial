@@ -402,3 +402,78 @@ void SparseMatrix::updateDetailCounts() {
     detail->rows = rowCount;
     detail->cols = colCount;
 }
+
+// ---------------------------------------------------------
+//                 OPERACIONES DE AGREGACION
+// ---------------------------------------------------------
+
+#include <vector>
+#include <limits>
+#include <algorithm>
+#include <cmath>
+
+// Obtiene todos los valores numericos dentro de un bounding box dado
+std::vector<double> SparseMatrix::getNumericValuesInRange(int r1, int c1, int r2, int c2) {
+    std::vector<double> values;
+    
+    // Asegurar que inicio <= fin
+    int minRow = std::min(r1, r2);
+    int maxRow = std::max(r1, r2);
+    int minCol = std::min(c1, c2);
+    int maxCol = std::max(c1, c2);
+
+    // Iterar fila por fila dentro del rango
+    for (int r = minRow; r <= maxRow; ++r) {
+        Header* rHead = findRowHeader(r);
+        if (rHead && rHead->access) {
+            Node* curr = rHead->access;
+            Node* startNode = curr;
+            // Recorrer los nodos de la fila (es una lista circular simple hacia la derecha)
+            do {
+                // Verificar si esta en el rango de columnas
+                if (curr->col >= minCol && curr->col <= maxCol) {
+                    try {
+                        // Intentar convertir texto a numero
+                        double val = std::stod(curr->value);
+                        values.push_back(val);
+                    } catch (...) {
+                        // Ignorar contenido no numerico (texto)
+                    }
+                }
+                curr = curr->right;
+            } while (curr && curr != startNode);
+        }
+    }
+    return values;
+}
+
+double SparseMatrix::aggSum(int r1, int c1, int r2, int c2) {
+    std::vector<double> vals = getNumericValuesInRange(r1, c1, r2, c2);
+    double sum = 0.0;
+    for (double v : vals) sum += v;
+    return sum;
+}
+
+double SparseMatrix::aggAverage(int r1, int c1, int r2, int c2) {
+    std::vector<double> vals = getNumericValuesInRange(r1, c1, r2, c2);
+    if (vals.empty()) return 0.0; // Evitar division por cero
+    double sum = 0.0;
+    for (double v : vals) sum += v;
+    return sum / vals.size();
+}
+
+double SparseMatrix::aggMax(int r1, int c1, int r2, int c2) {
+    std::vector<double> vals = getNumericValuesInRange(r1, c1, r2, c2);
+    if (vals.empty()) return 0.0; 
+    double max_val = std::numeric_limits<double>::lowest();
+    for (double v : vals) max_val = std::max(max_val, v);
+    return max_val;
+}
+
+double SparseMatrix::aggMin(int r1, int c1, int r2, int c2) {
+    std::vector<double> vals = getNumericValuesInRange(r1, c1, r2, c2);
+    if (vals.empty()) return 0.0; 
+    double min_val = std::numeric_limits<double>::max();
+    for (double v : vals) min_val = std::min(min_val, v);
+    return min_val;
+}

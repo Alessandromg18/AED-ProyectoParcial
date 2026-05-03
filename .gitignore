@@ -1,0 +1,28 @@
+# Directorios de compilacion generados localmente
+build/
+bin/
+out/
+cmake-build-*/
+
+# Archivos ejecutables compilados en tu pc
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Archivos temporales y de cache de CMake
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+compile_commands.json
+*.cmake
+
+# Configuraciones locales de tu IDE (VS Code o Visual Studio)
+.vscode/
+.vs/
+*.user
+
+# Archivos temporales del sistema operativo
+.DS_Store
+Thumbs.db

@@ -3,7 +3,12 @@ project(Proyecto_AED)
 
 set(CMAKE_CXX_STANDARD 23)
 
-find_package(SFML 3 REQUIRED COMPONENTS Graphics Window System)
+include(FetchContent)
+FetchContent_Declare(SFML
+    GIT_REPOSITORY https://github.com/SFML/SFML.git
+    GIT_TAG 3.0.0
+)
+FetchContent_MakeAvailable(SFML)
 
 add_executable(Proyecto_AED
         main.cpp
@@ -16,11 +21,7 @@ add_executable(Proyecto_AED
         matrix/DetailNode.h
 )
 
-target_link_libraries(Proyecto_AED
-        SFML::Graphics
-        SFML::Window
-        SFML::System
-)
+target_link_libraries(Proyecto_AED PRIVATE SFML::Graphics SFML::Window SFML::System)
 
-# 🔥 IMPORTANTE: copiar fuentes al runtime
+# 🔥 IMPORTANTE: copiar fuentes al runtime (asegurarse que Exista la carpeta fuente/ en el proyecto)
 file(COPY fuente DESTINATION ${CMAKE_BINARY_DIR})

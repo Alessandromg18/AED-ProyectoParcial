@@ -9,6 +9,7 @@
 #include "DetailNode.h"
 #include "Node.h"
 #include <string>
+#include <vector>
 
 class SparseMatrix {
 private:
@@ -34,9 +35,14 @@ public:
     void removeRowHeader(int row);
     void removeColHeader(int col);
     void updateDetailCounts();
-    // FALTA MAS FUNCIONES PERO AQUI ESTA LAS PRINCIPALES PARA QUE LA LOGICA DE LOS HEADERS, DETAIL Y NODOS SE MANTENGA (PRINCIPALMENTE LAS CONEXIONES)
 
-
+    // -- OPERACIONES DE AGREGACION --
+    std::vector<double> getNumericValuesInRange(int r1, int c1, int r2, int c2);
+    double aggSum(int r1, int c1, int r2, int c2);
+    double aggAverage(int r1, int c1, int r2, int c2);
+    double aggMax(int r1, int c1, int r2, int c2);
+    double aggMin(int r1, int c1, int r2, int c2);
 };
 
 #endif //SPARSEMATRIX_H
+
