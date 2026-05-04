@@ -404,6 +404,63 @@ void SparseMatrix::updateDetailCounts() {
 }
 
 // ---------------------------------------------------------
+//                 OPERACIONES SOBRE FILA Y COLUMNA
+// ---------------------------------------------------------
+void SparseMatrix::removeRow(int row) {
+    Header* rowH = findRowHeader(row);
+    if (!rowH || !rowH->access) return;
+
+    std::vector<int> colsToDelete;
+    Node* start = rowH->access;
+    Node* curr = start;
+    do {
+        colsToDelete.push_back(curr->col);
+        curr = curr->right;
+    } while (curr && curr != start);
+
+    for (int c : colsToDelete) remove(row, c);
+}
+
+void SparseMatrix::removeCol(int col) {
+    Header* columnH = findColHeader(col);
+    if (!columnH || !columnH->access) return;
+
+    std::vector<int> rowsToDelete;
+    Node* start = columnH->access;
+    Node* curr = start;
+    do {
+        rowsToDelete.push_back(curr->row);
+        curr = curr->down;
+    } while (curr && curr != start);
+
+    for (int r : rowsToDelete) remove(r, col);
+}
+
+void SparseMatrix::removeRange(int row1, int col1, int row2, int col2) {
+    int minRow = std::min(row1, row2);
+    int maxRow = std::max(row1, row2);
+    int minCol = std::min(col1, col2);
+    int maxCol = std::max(col1, col2);
+
+    for (int row = minRow; row <= maxRow; ++row) {
+        Header* rowHead = findRowHeader(row);
+        if (!rowHead || !rowHead->access) continue;
+
+        std::vector<int> colsToDelete;
+        Node* startNode = rowHead->access;
+        Node* curr = startNode;
+        do {
+            if (curr->col >= minCol && curr->col <= maxCol) {
+                colsToDelete.push_back(curr->col);
+            }
+            curr = curr->right;
+        } while (curr && curr != startNode);
+
+        for (int c : colsToDelete) remove(row, c);
+    }
+}
+
+// ---------------------------------------------------------
 //                 OPERACIONES DE AGREGACION
 // ---------------------------------------------------------
 

@@ -36,6 +36,14 @@ public:
     void removeColHeader(int col);
     void updateDetailCounts();
 
+    // EmPuiquin24: Operaciones sobre fila y columna
+    // -- Eliminar todos los elementos de una fila
+    void removeRow(int row);
+    // -- Eliminar todos los elementos de una columna
+    void removeCol(int col);
+    // -- Eliminar un rango de celdas (Ejemplo: Eliminar todas las celdas dentro del bounding box definido por (r1, c1) y (r2, c2))
+    void removeRange(int row1, int col1, int row2, int col2);
+
     // -- OPERACIONES DE AGREGACION --
     std::vector<double> getNumericValuesInRange(int r1, int c1, int r2, int c2);
     double aggSum(int r1, int c1, int r2, int c2);
