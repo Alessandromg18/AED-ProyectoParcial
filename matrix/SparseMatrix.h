@@ -3,7 +3,7 @@
 
 #pragma once
 
-// Aqui es donde se crea la Matriz dispersa xd
+// Aqui es donde se crea la Matriz dispersa, la logica detraz de esta
 
 #include "Header.h"
 #include "DetailNode.h"
@@ -35,8 +35,14 @@ public:
     void removeRowHeader(int row);
     void removeColHeader(int col);
     void updateDetailCounts();
+    double evaluateFormula(const std::string& formula);
+    double getCellValue(const std::string& ref);
+    std::vector<double> getNumericValuesInRange(int r1, int c1, int r2, int c2);
+    double aggSum(int r1, int c1, int r2, int c2);
+    double aggAverage(int r1, int c1, int r2, int c2);
+    double aggMax(int r1, int c1, int r2, int c2);
+    double aggMin(int r1, int c1, int r2, int c2);
 
-    // EmPuiquin24: Operaciones sobre fila y columna
     // -- Eliminar todos los elementos de una fila
     void removeRow(int row);
     // -- Eliminar todos los elementos de una columna
@@ -44,13 +50,9 @@ public:
     // -- Eliminar un rango de celdas (Ejemplo: Eliminar todas las celdas dentro del bounding box definido por (r1, c1) y (r2, c2))
     void removeRange(int row1, int col1, int row2, int col2);
 
-    // -- OPERACIONES DE AGREGACION --
-    std::vector<double> getNumericValuesInRange(int r1, int c1, int r2, int c2);
-    double aggSum(int r1, int c1, int r2, int c2);
-    double aggAverage(int r1, int c1, int r2, int c2);
-    double aggMax(int r1, int c1, int r2, int c2);
-    double aggMin(int r1, int c1, int r2, int c2);
+    void deleteHeader(Header*& startList, Header* target);
+
+
 };
 
 #endif //SPARSEMATRIX_H
-
