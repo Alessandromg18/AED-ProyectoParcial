@@ -10,7 +10,7 @@
 #include <SFML/Graphics.hpp>
 #include "SparseMatrix.h"
 
-// GRAFICA MI MATRIZ DISPERSA
+// Para graficar nuestra matriz dispersa
 
 class MatrixRenderer {
 private:
@@ -18,8 +18,8 @@ private:
     sf::Font font;
     sf::View view;
     float scrollSpeed = 20.f;
-    int hRow = -1; // Fila a resaltar
-    int hCol = -1; // Columna a resaltar
+    int hRow = -1;
+    int hCol = -1;
 
 public:
     MatrixRenderer(SparseMatrix& m);
@@ -38,17 +38,20 @@ public:
     sf::View& getView();
 
     void drawArrowHead(sf::RenderWindow& window, sf::Vector2f target, char direction, sf::Color color);
+
     void setHighlight(int r, int c);
+
     void clearHighlight() { hRow = -1; hCol = -1; }
-    std::string indexToExcelCol(int index) {
+
+    std::string indexToExcelCol(int index) { // Para que tenga los valores alfabeticos como un excel
         std::string colName = "";
         while (index >= 0) {
             colName = (char)('A' + (index % 26)) + colName;
             index = (index / 26) - 1;
         }
+
         return colName;
     }
-
 };
 
 
