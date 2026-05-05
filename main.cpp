@@ -106,7 +106,7 @@ int main() {
     sf::RenderWindow window(sf::VideoMode({900, 600}), "Brenner Excel"); // Nuestra ventana
     sf::Image icon;
 
-    if (icon.loadFromFile("C:/Users/facum/Videos/Proyecto_AED/logo/logo.png")) { // Icono de la ventana
+    if (icon.loadFromFile("logo/logo.png")) { // Icono de la ventana
         window.setIcon(icon);
     }
     window.setFramerateLimit(60);
@@ -114,7 +114,7 @@ int main() {
     MatrixRenderer renderer(matrix); // Creamos MatrixRenderer para poder visualizar nuestra matriz
 
     sf::Font font;
-    if (!font.openFromFile("C:/Windows/Fonts/arial.ttf")) {
+    if (!font.openFromFile("fuente/arial.ttf")) {
         std::cerr << "Error: No se pudo cargar la fuente." << std::endl;
     }
 
