@@ -27,5 +27,4 @@ target_link_libraries(Proyecto_AED
         SFML::System
 )
 
-# 🔥 IMPORTANTE: copiar fuentes al runtime
 file(COPY fuente DESTINATION ${CMAKE_BINARY_DIR})
