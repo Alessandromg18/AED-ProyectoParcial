@@ -1,7 +1,7 @@
 # AED-ProyectoParcial
 ## Integrantes
 - Hector Emilio Huaman Puiquin
-- Alessandro Facundo Freed Moron Gallegos
+- Alessandro Facundo Freed Monzón Gallegos
 - Adrian Aaron Urbina Mendoza
 
 ## Requisitos previos
