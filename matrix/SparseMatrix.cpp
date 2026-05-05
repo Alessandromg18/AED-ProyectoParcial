@@ -679,46 +679,46 @@ std::vector<double> SparseMatrix::getNumericValuesInRange(int r1, int c1, int r2
 
     std::vector<double> values; // Aqui guardamos los valores numericos
 
-    // Aseguraramos que el inicio sea menos que el fin por si nos pasan A5:A1
-
+    // Aseguraramos que el inicio sea menos que el fin
     int minRow = std::min(r1, r2);
     int maxRow = std::max(r1, r2);
     int minCol = std::min(c1, c2);
     int maxCol = std::max(c1, c2);
 
-    // Recorremos fila por fila dentro de nuestro rango
+    // [Complejidad O(h+k)]: Iteramos SOLO por las filas que existen en memoria
+    Header* tempRH = detail->rowHeaders;
 
-    for (int r = minRow; r <= maxRow; ++r) {
+    if (tempRH && tempRH != (Header*)detail) {
+        Header* startH = tempRH;
+        do {
+            // 1. Salida temprana
+            // si el indice actual ya es mayor que el maxRow que buscamos, NO HAY NECESIDAD de seguir buscando.
+            if (tempRH->index > maxRow) break;
 
-        // Vemos si la fila tiene datos (Si tiene debe existir su nodo header)
+            // 2. Si la cabecera está dentro de nuestro rango (>= minRow), la evaluamos
+            if (tempRH->index >= minRow) {
+                
+                if (tempRH->access) {
+                    Node* curr = tempRH->access;
+                    Node* startNode = curr; // Este por si volvemos al inicio
 
-        Header* rHead = findRowHeader(r);
-
-        // Recorremos los nodos de la fila
-
-        if (rHead && rHead->access) {
-            Node* curr = rHead->access;
-
-            Node* startNode = curr; // Este por si volvemos al inicio
-
-            do {
-
-                // Verificamos si esta en el rango de columnas
-
-                if (curr->col >= minCol && curr->col <= maxCol) {
-                    try {
-
-                        // Convierto a numero
-
-                        double val = std::stod(curr->value);
-                        values.push_back(val);
-
-                    } catch (...) {
-                    }
+                    do {
+                        // Verificamos si esta en el rango de columnas
+                        if (curr->col >= minCol && curr->col <= maxCol) {
+                            try {
+                                // Convierto a numero
+                                double val = std::stod(curr->value);
+                                values.push_back(val);
+                            } catch (...) {
+                            }
+                        }
+                        curr = curr->right;
+                    } while (curr && curr != startNode);
                 }
-                curr = curr->right;
-            } while (curr && curr != startNode);
-        }
+            }
+            // Saltamos a la siguiente fila existente
+            tempRH = tempRH->next;
+        } while (tempRH != startH && tempRH != (Header*)detail);
     }
 
     return values;

@@ -3,7 +3,12 @@ project(Proyecto_AED)
 
 set(CMAKE_CXX_STANDARD 23)
 
-find_package(SFML 3 REQUIRED COMPONENTS Graphics Window System)
+include(FetchContent)
+FetchContent_Declare(SFML
+    GIT_REPOSITORY https://github.com/SFML/SFML.git
+    GIT_TAG 3.0.0
+)
+FetchContent_MakeAvailable(SFML)
 
 add_executable(Proyecto_AED
         main.cpp
