@@ -9,6 +9,8 @@
 const int MAX_COORD = 1000000;
 bool showHelp = false; // Variable si quieres ver la ayuda
 
+
+// Convierte el string de la columna a indice de la matriz
 int excelColToIndex(std::string col) {
     int result = 0;
     for (char c : col) { result = result * 26 + (toupper(c) - 'A' + 1); }
@@ -120,42 +122,41 @@ int main() {
 
     // Creamos nuestro panel
 
-    // --- CONFIGURACIÓN DE LA INTERFAZ DE USUARIO ---
+    // INTERFAZ DE USUARIO
+
     std::string inputText = "";
     std::string lastQueryResult = "Esperando comando...";
     sf::Color statusColor = sf::Color(80, 80, 80);
     sf::Color uiBorderColor = sf::Color(180, 180, 180);
 
     // Panel de fondo para la ayuda
+
     sf::RectangleShape uiBackground({880.f, 220.f});
     uiBackground.setFillColor(sf::Color(255, 255, 255, 245));
     uiBackground.setPosition({10.f, 330.f});
     uiBackground.setOutlineThickness(3);
 
-    // Columna Izquierda: Gestión de celdas y Análisis
     sf::Text textLeft(font);
     textLeft.setCharacterSize(13);
     textLeft.setFillColor(sf::Color::Black);
 
-    // Columna Derecha: Estructura y Fórmulas
     sf::Text textRight(font);
     textRight.setCharacterSize(13);
     textRight.setFillColor(sf::Color::Black);
 
-    // Barra inferior: Controles del sistema
     sf::Text textBottom(font);
     textBottom.setCharacterSize(12);
-    textBottom.setFillColor(sf::Color(100, 100, 100)); // Color gris para contraste
+    textBottom.setFillColor(sf::Color(100, 100, 100));
 
-    // Texto de entrada y resultados (Línea de comandos)
     sf::Text resultText(font);
     resultText.setCharacterSize(18);
-    // Subimos la posición Y de 565 a 535 para que no se corte con el borde de la ventana
     resultText.setPosition({30.f, 535.f});
 
-    while (window.isOpen()) { // Si la ventana esta abierta
+    // Si la ventana esta abierta
+
+    while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
-            if (event->is<sf::Event::Closed>()) window.close(); // Si cerramos la ventana
+            if (event->is<sf::Event::Closed>()) window.close(); // Cerrar la ventana
 
             if (const auto* keyEvent = event->getIf<sf::Event::KeyPressed>()) {
                 if (keyEvent->code == sf::Keyboard::Key::F1) {
@@ -184,6 +185,8 @@ int main() {
 
                     uiBorderColor = sf::Color(180, 180, 180);
 
+                    // Si el comando es un get (buscar)
+
                     if (cmd == "get") {
                         std::string target;
                         if (ss >> target && parseExcelCoord(target, r, c)) {
@@ -199,67 +202,86 @@ int main() {
                         }
                     }
 
+                    // Si el comando es un del (eliminar)
                     else if (cmd == "del") {
-    std::string target;
-    if (ss >> target) {
-        try {
-            int r1, c1, r2, c2;
+                        std::string target;
+                        if (ss >> target) {
+                            try {
+                                int r1, c1, r2, c2;
 
-            // 1. PRIORIDAD: ¿Es un rango? (Ej: A1:B2, A:C, 1:5)
-            if (target.find(':') != std::string::npos) {
-                if (parseRange(target, r1, c1, r2, c2)) {
-                    // Si r2 o c2 son el MAX_COORD de parseRange,
-                    // removeRange ahora lo manejará internamente con la nueva lógica.
-                    matrix.removeRange(r1, c1, r2, c2);
-                    lastQueryResult = ">> OK: Rango " + target + " eliminado.";
-                } else {
-                    throw std::runtime_error("Formato de rango invalido.");
-                }
-            }
-            // 2. ¿Es solo un número? (Fila pura: del 1)
-            else if (std::all_of(target.begin(), target.end(), ::isdigit)) {
-                r1 = std::stoi(target) - 1;
-                // Validamos si la fila existe antes de borrar para lanzar error si está vacía
-                if (!matrix.findRowHeader(r1)) {
-                    throw std::runtime_error("La fila " + target + " ya esta vacia.");
-                }
-                matrix.removeRow(r1);
-                lastQueryResult = ">> OK: Fila " + target + " eliminada.";
-            }
-            // 3. ¿Es solo letras? (Columna pura: del A)
-            else if (std::all_of(target.begin(), target.end(), ::isalpha)) {
-                c1 = excelColToIndex(target);
-                // Validamos si la columna existe
-                if (!matrix.findColHeader(c1)) {
-                    throw std::runtime_error("La columna " + target + " ya esta vacia.");
-                }
-                matrix.removeCol(c1);
-                lastQueryResult = ">> OK: Columna " + target + " eliminada.";
-            }
-            // 4. ¿Es una celda única? (Ej: del A1)
-            else if (parseExcelCoord(target, r1, c1)) {
-                // Comprobamos si hay datos. Si get() devuelve "", es que no existe el nodo.
-                if (matrix.get(r1, c1).empty()) {
-                    throw std::runtime_error("La celda " + target + " ya esta vacia.");
-                }
-                matrix.remove(r1, c1);
-                lastQueryResult = ">> OK: Celda " + target + " eliminada.";
-            }
-            else {
-                throw std::runtime_error("Referencia no reconocida: " + target);
-            }
+                                // 1. Caso 1 : Si es un del Rango
+                                if (target.find(':') != std::string::npos) {
+                                    if (parseRange(target, r1, c1, r2, c2)) {
+                                        matrix.removeRange(r1, c1, r2, c2);
+                                        lastQueryResult = ">> OK: Rango " + target + " eliminado.";
+                                    }
 
-            statusColor = sf::Color(0, 150, 0); // Verde éxito
-            uiBorderColor = sf::Color(0, 150, 0);
-        }
-        catch (const std::exception& e) {
-            lastQueryResult = ">> ERROR: " + std::string(e.what());
-            statusColor = sf::Color::Red;
-            uiBorderColor = sf::Color::Red;
-        }
-        renderer.clearHighlight();
-    }
-}
+                                    else {
+                                        throw std::runtime_error("Formato de rango invalido.");
+                                    }
+                                }
+
+                                // Caso 2 : Si es un numero, se elimina un fila
+                                else if (std::all_of(target.begin(), target.end(), ::isdigit)) {
+                                    r1 = std::stoi(target) - 1;
+
+                                 // Validamos si la fila existe antes de borrar para lanzar error si está vacía
+                                    if (!matrix.findRowHeader(r1)) {
+                                        throw std::runtime_error("La fila " + target + " ya esta vacia.");
+                                    }
+
+                                    matrix.removeRow(r1);
+                                    lastQueryResult = ">> OK: Fila " + target + " eliminada.";
+                                }
+
+                                // Caso 3. Si es una letra, se elimina columna
+                                else if (std::all_of(target.begin(), target.end(), ::isalpha)) {
+                                    c1 = excelColToIndex(target);
+
+                                    // Si la columna no tiene datos
+
+                                    if (!matrix.findColHeader(c1)) {
+                                        throw std::runtime_error("La columna " + target + " ya esta vacia.");
+                                    }
+
+                                    matrix.removeCol(c1);
+                                    lastQueryResult = ">> OK: Columna " + target + " eliminada.";
+                                }
+
+                                // Caso 4 : Si es una celda
+                                else if (parseExcelCoord(target, r1, c1)) {
+
+                                    // Comprobamos si hay datos. Si get() devuelve "", es que no existe el nodo.
+
+                                    if (matrix.get(r1, c1).empty()) {
+                                        throw std::runtime_error("La celda " + target + " ya esta vacia.");
+                                    }
+
+                                    matrix.remove(r1, c1);
+                                    lastQueryResult = ">> OK: Celda " + target + " eliminada.";
+                                }
+
+                                else {
+                                    throw std::runtime_error("Referencia no reconocida: " + target);
+                                }
+
+                                statusColor = sf::Color(0, 150, 0); // Si se elimino bien
+                                uiBorderColor = sf::Color(0, 150, 0);
+                            }
+
+                            catch (const std::exception& e) {
+
+                                lastQueryResult = ">> ERROR: " + std::string(e.what());
+                                statusColor = sf::Color::Red;
+                                uiBorderColor = sf::Color::Red;
+                            }
+
+                            renderer.clearHighlight();
+                        }
+                    }
+
+                    // Si es una operacion
+
                     else if (cmd == "sum" || cmd == "avg" || cmd == "max" || cmd == "min") {
                         std::string range;
                         int r1, c1, r2, c2;
@@ -291,8 +313,6 @@ int main() {
                             }
                             catch (const std::exception& e) {
 
-                                // Si aggAverage lanza el error
-
                                 lastQueryResult = ">> ERROR: " + std::string(e.what());
                                 statusColor = sf::Color::Red;
                                 uiBorderColor = sf::Color::Red;
@@ -309,10 +329,10 @@ int main() {
                             statusColor = sf::Color::Red;
                             uiBorderColor = sf::Color::Red;
                         }
+
                         else {
                             try {
 
-                                // Intentamos insertar. Si falla la formula, lanza excepcion.
 
                                 matrix.insert(r, c, val);
                                 lastQueryResult = ">> OK: " + cmd + " actualizado.";
@@ -321,8 +341,6 @@ int main() {
                                 renderer.setHighlight(r, c);
                             }
                             catch (const std::exception& e) {
-
-                                // Aquí capturamos el mensaje de la excepción y lo mandamos a la interfaz de usuario
 
                                 lastQueryResult = ">> ERROR: " + std::string(e.what());
                                 statusColor = sf::Color::Red;
@@ -333,8 +351,10 @@ int main() {
                     }
                     inputText.clear();
                 }
+
                 else if (unicode >= 32 && unicode < 128) {
                     inputText += static_cast<char>(unicode);
+
                 }
             }
         }
@@ -353,16 +373,19 @@ int main() {
         window.setView(window.getDefaultView());
 
         // DIBUJO DE INTERFAZ
+
         uiBackground.setOutlineColor(uiBorderColor);
 
         if (showHelp) {
             window.draw(uiBackground);
 
             // Definimos posiciones base relativas al panel blanco
+
             float baseX = 40.f;
             float baseY = 345.f;
 
-            // --- COLUMNA 1: EDICIÓN Y ANÁLISIS ---
+            // COLUMNA 1: Edición y analisis
+
             textLeft.setString(
                 "1. CELDA Y CONSULTA\n"
                 "------------------------------------------\n"
@@ -379,7 +402,8 @@ int main() {
             textLeft.setPosition({baseX, baseY});
             window.draw(textLeft);
 
-            // --- COLUMNA 2: ESTRUCTURA Y FÓRMULAS ---
+            // COLUMNA 2: Estructura y formulas
+
             textRight.setString(
                 "2. ESTRUCTURA Y RANGOS\n"
                 "------------------------------------------\n"
@@ -396,17 +420,16 @@ int main() {
             textRight.setPosition({baseX + 440.f, baseY});
             window.draw(textRight);
 
-            // --- BARRA INFERIOR ---
             textBottom.setString("SISTEMA: SparseMatrix SFML | [F1] Ayuda | [Flechas] Camara | [Rueda] Zoom");
             textBottom.setPosition({baseX, baseY + 185.f});
             window.draw(textBottom);
         }
 
-        // --- LÍNEA DE COMANDOS Y RESULTADOS ---
+        // Linea de comandos
+
         std::string helpPrompt = showHelp ? " [F1: Ocultar]" : " [F1: Ayuda]";
         resultText.setString(lastQueryResult + "\n" + helpPrompt + " ESCRIBIENDO: " + inputText + "_");
 
-        // Mantenemos la posición baja para que no se solape con el panel de ayuda
         resultText.setPosition({30.f, 555.f});
         resultText.setFillColor(statusColor);
         window.draw(resultText);

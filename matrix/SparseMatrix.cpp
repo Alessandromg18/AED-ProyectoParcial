@@ -60,7 +60,7 @@ Header* SparseMatrix::getOrCreateHeader(Header*& head, int index) {
 }
 
 
-// ================= Saber si el nodo existe =================
+// ================= Saber si el nodo existe y si existe nos lo devuelve =================
 
 Node* SparseMatrix::findNode(int row, int col) {
 
@@ -214,14 +214,16 @@ std::string SparseMatrix::get(int row, int col) {
 // ================= Eliminar un nodo ===========
 
 void SparseMatrix::remove(int row, int col) {
-    // 1. Buscamos los headers de forma segura
+
+    // Buscamos los headers de forma segura
+
     Header* rH = findRowHeader(row);
     Header* cH = findColHeader(col);
 
-    // QUITADO: El if con get(row, col) == "" porque causa recursividad/crashes
     if (!rH || !cH) return;
 
-    // 2. Buscar el nodo (targetR) y su anterior (prevR) en la FILA
+    // Buscar el nodo y su anterior para hacer las reconexiones
+
     Node* prevR = nullptr;
     Node* targetR = rH->access;
     bool found = false;
@@ -239,23 +241,29 @@ void SparseMatrix::remove(int row, int col) {
         } while (temp != rH->access);
     }
 
-    if (!found) return; // Si no existe el nodo, salimos silenciosamente
+    if (!found) return; // Si no existe el nodo, salimos
 
-    // 3. Buscar el anterior (prevC) en la COLUMNA
+    // 3. Buscar el anterior en la columna
+
     Node* prevC = nullptr;
     Node* targetC = cH->access;
     Node* tempC = targetC;
-    // Buscamos quién apunta a nuestro nodo desde "arriba"
+
+    // Buscamos quién apunta a nuestro nodo
+
     while (tempC->down != targetR) {
         tempC = tempC->down;
     }
     prevC = (tempC->down == targetR) ? tempC : nullptr;
+
     // Si el que apunta es el mismo, es porque es el único
+
     if (prevC == targetR) prevC = nullptr;
 
-    // --- RECONEXIÓN FILA ---
-    if (prevR == nullptr) { // El nodo a borrar es el access del header
-        if (targetR->right == targetR) { // Único nodo
+    // RECONEXIÓN FILA
+
+    if (prevR == nullptr) {
+        if (targetR->right == targetR) {
             rH->access = nullptr;
             removeRowHeader(row);
         } else {
@@ -268,9 +276,10 @@ void SparseMatrix::remove(int row, int col) {
         prevR->right = targetR->right;
     }
 
-    // --- RECONEXIÓN COLUMNA ---
-    if (targetR == cH->access) { // Usamos targetR porque es el mismo objeto que targetC
-        if (targetR->down == targetR) { // Único nodo
+    // RECONEXIÓN COLUMNA
+
+    if (targetR == cH->access) {
+        if (targetR->down == targetR) {
             cH->access = nullptr;
             removeColHeader(col);
         } else {
@@ -280,7 +289,6 @@ void SparseMatrix::remove(int row, int col) {
             last->down = cH->access;
         }
     } else {
-        // Para encontrar el prevC real si no es el access:
         Node* scan = cH->access;
         while(scan->down != targetR) scan = scan->down;
         scan->down = targetR->down;
@@ -288,21 +296,26 @@ void SparseMatrix::remove(int row, int col) {
 
     delete targetR;
 
-    // Sincronización final
+    // Conexion final por si el detail ha cambiado
+
     detail->down_ptr = detail->rowHeaders;
     detail->right_ptr = detail->colHeaders;
-    updateDetailCounts();
+
+    updateDetailCounts(); // Actualizo los valores del detail
 }
 
 // ================= Buscamos la cabecera fila  ===========
-// Sirve para ver si en la fila hay elementos
 
 Header* SparseMatrix::findRowHeader(int row) {
     Header* curr = detail->rowHeaders;
-    // Si la lista es null o apunta al detail (vacía), no hay nada que buscar
+
+    // Si la lista es null o apunta al detail
+
     if (!curr || curr == (Header*)detail) return nullptr;
 
     Header* start = curr;
+
+    // Si existe entonces buscamos el hader de la fila
     do {
         if (curr->index == row) return curr;
         curr = curr->next;
@@ -332,61 +345,75 @@ void SparseMatrix::removeRowHeader(int row) {
     Header* prev = nullptr;
     Header* curr = detail->rowHeaders;
 
-    // Caso lista vacía
     if (!curr || curr == (Header*)detail) return;
 
-    // Buscar el nodo y su anterior
+    // Buscar el header y su anterior
     while (curr != (Header*)detail && curr->index != row) {
         prev = curr;
         curr = curr->next;
     }
 
+    // Si es el primer nodo
+
     if (curr && curr != (Header*)detail) {
-        if (prev == nullptr) { // Es el primer nodo
+        if (prev == nullptr) {
+
+            // Si es el unico
+
             if (curr->next == (Header*)detail) {
-                detail->rowHeaders = nullptr; // Era el único
-            } else {
-                // Si hay más, debemos actualizar el LAST para que apunte al nuevo head
+                detail->rowHeaders = nullptr;
+            }
+
+            else {
                 Header* last = curr;
                 while (last->next != (Header*)detail) last = last->next;
                 detail->rowHeaders = curr->next;
-                // Opcional: si tu lógica es puramente circular sin detail intermedio:
-                // last->next = detail->rowHeaders;
             }
-        } else {
+        }
+
+        else {
             prev->next = curr->next;
         }
+
         delete curr;
     }
 }
 
 // ================== Para remover el header columna si el nodo que elimine era su unico elemento ======
+
 void SparseMatrix::removeColHeader(int col) {
     Header* prev = nullptr;
     Header* curr = detail->colHeaders;
 
-    // Caso de seguridad: lista vacía
     if (!curr || curr == (Header*)detail) return;
 
-    // Buscar el header y su anterior
+    // Buscamos el header y su anterior a esta para la reconexion
+
     while (curr != (Header*)detail && curr->index != col) {
         prev = curr;
         curr = curr->next;
     }
 
     if (curr && curr != (Header*)detail) {
-        if (prev == nullptr) { // Es el primer header de la lista
+
+        // Es el primer header de la lista
+
+        if (prev == nullptr) {
+            // Si es el unico nodo header entonces detail debe apuntar a nullptr
             if (curr->next == (Header*)detail) {
-                detail->colHeaders = nullptr; // Era el único, lista vacía
-            } else {
-                // Actualizamos el LAST para que el círculo no se rompa
+                detail->colHeaders = nullptr;
+            }
+
+            else {
                 Header* last = curr;
                 while (last->next != (Header*)detail) last = last->next;
                 detail->colHeaders = curr->next;
                 last->next = (Header*)detail;
             }
-        } else {
-            // Saltamos el nodo actual
+        }
+
+        else {
+            // Saltamos al siguiente nodo
             prev->next = curr->next;
         }
         delete curr;
@@ -419,7 +446,6 @@ void SparseMatrix::updateDetailCounts() {
     detail->cols = colCount;
 }
 
-// DESDE AQUI FALTA
 
 // ========== Funcion que nos sirve para convertir "A1" a índices de matriz
 
@@ -786,11 +812,19 @@ double SparseMatrix::aggMin(int r1, int c1, int r2, int c2) {
 
     return min_val;
 }
+
+// ====== Funcion para eliminar toda una fila ====================
+
 void SparseMatrix::removeRow(int row) {
+
+    // Nos ubicamos en la final y vemos si tiene datos o no
+
     Header* rowH = findRowHeader(row);
     if (!rowH) {
         throw std::runtime_error("La fila " + std::to_string(row + 1) + " no tiene datos.");
     }
+
+    // Eliminamos cada elemento de esta fila y hacemos las reconexiones con los headers de fila
 
     if (rowH->access) {
         std::vector<int> colsToDelete;
@@ -807,11 +841,12 @@ void SparseMatrix::removeRow(int row) {
     }
 }
 
+// ====== Funcion para eliminar toda una columna ====================
+
 void SparseMatrix::removeCol(int col) {
     Header* columnH = findColHeader(col);
+
     if (!columnH) {
-        // Podrías convertir el índice a letra aquí si quisieras,
-        // pero por ahora lanzamos el error con el índice.
         throw std::runtime_error("La columna solicitada no tiene datos.");
     }
 
@@ -831,7 +866,12 @@ void SparseMatrix::removeCol(int col) {
 }
 
 
+// ====== Funcion para eliminar todo un rango ====================
+
 void SparseMatrix::removeRange(int row1, int col1, int row2, int col2) {
+
+    // Ordenamos el rango por si nos pasaron mal (A4:A1)
+
     int minRow = std::min(row1, row2);
     int maxRow = std::max(row1, row2);
     int minCol = std::min(col1, col2);
@@ -839,9 +879,12 @@ void SparseMatrix::removeRange(int row1, int col1, int row2, int col2) {
 
     int totalDeleted = 0;
 
-    // 1. Recolectamos índices de filas para evitar problemas con punteros volátiles
+    // Recolectamos índices de filas para evitar problemas con punteros
+
     std::vector<int> rowsToProcess;
+
     Header* tempRH = detail->rowHeaders;
+
     if (tempRH && tempRH != (Header*)detail) {
         Header* start = tempRH;
         do {
@@ -856,13 +899,16 @@ void SparseMatrix::removeRange(int row1, int col1, int row2, int col2) {
         throw std::runtime_error("No hay datos en el rango de filas especificado.");
     }
 
-    // 2. Procesamos cada fila de forma atómica
+    // Procesamos cada fila
+
     for (int r : rowsToProcess) {
         Header* rH = findRowHeader(r);
         if (!rH || !rH->access) continue;
 
-        // Recolectamos columnas de los nodos que caen en el rango
+        // Recolectamos columnas de los nodos que caen en el rango para hacer sus reconexiones
+
         std::vector<int> colsToDelete;
+
         Node* currN = rH->access;
         Node* startN = currN;
         do {
@@ -872,15 +918,15 @@ void SparseMatrix::removeRange(int row1, int col1, int row2, int col2) {
             currN = currN->right;
         } while (currN != startN);
 
-        // 3. Borramos cada nodo identificado
+        // Borramos cada nodo identificado
         for (int c : colsToDelete) {
             Header* cH = findColHeader(c);
-            if (!rH || !cH) continue; // Seguridad extra
+            if (!rH || !cH) continue;
 
-            // --- Búsqueda de nodos y anteriores ---
+            // Búscamos sus nodos y anteriores
+
             Node *prevR = nullptr, *target = nullptr, *prevC = nullptr;
 
-            // Encontrar en fila
             Node* scanR = rH->access;
             if (scanR) {
                 do {
@@ -891,33 +937,40 @@ void SparseMatrix::removeRange(int row1, int col1, int row2, int col2) {
             }
             if (!target) continue;
 
-            // Encontrar anterior en columna
+            // Encontramos su anterior en columna
+
             Node* scanC = cH->access;
             do {
                 if (scanC->down == target) { prevC = scanC; break; }
                 scanC = scanC->down;
             } while (scanC != cH->access);
 
-            // --- Reconexión Fila ---
-            if (target->right == target) { // Último nodo de la fila
+            // Reconexión Fila
+
+            if (target->right == target) {
                 rH->access = nullptr;
                 removeRowHeader(r);
-                rH = nullptr; // El header ya no existe
-            } else {
+                rH = nullptr;
+            }
+
+            else {
                 if (target == rH->access) rH->access = target->right;
                 if (prevR) prevR->right = target->right;
-                else { // Si prevR es null, target era el access, necesitamos el último para cerrar el círculo
+                else {
                     Node* lastR = target;
                     while (lastR->right != target) lastR = lastR->right;
                     lastR->right = target->right;
                 }
             }
 
-            // --- Reconexión Columna ---
-            if (target->down == target) { // Último nodo de la columna
+            // Reconexión Columna
+
+            if (target->down == target) {
                 cH->access = nullptr;
                 removeColHeader(c);
-            } else {
+            }
+
+            else {
                 if (target == cH->access) cH->access = target->down;
                 prevC->down = target->down;
             }
@@ -925,7 +978,6 @@ void SparseMatrix::removeRange(int row1, int col1, int row2, int col2) {
             delete target;
             totalDeleted++;
 
-            // Si el rowHeader fue borrado, no podemos seguir en esta fila
             if (!rH) break;
         }
     }
@@ -934,8 +986,9 @@ void SparseMatrix::removeRange(int row1, int col1, int row2, int col2) {
         throw std::runtime_error("No se encontraron celdas con datos en el rango.");
     }
 
-    // Sincronización final única
+    // Ultima conexiones para el detail
     detail->down_ptr = detail->rowHeaders;
     detail->right_ptr = detail->colHeaders;
-    updateDetailCounts();
+
+    updateDetailCounts(); // Actualizamos detail
 }
